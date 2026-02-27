@@ -30,7 +30,8 @@ const db = {
         "10. Tadbirkorlik va kasblarga o'qish",
         "11. Sport formasi, musiqa va cholg'u asboblari",
         "12. Noturar joy ijarasi yoki jihozlar uchun subsidiya",
-        "13. \"Yoshlar daftari\" elektron platformasida ro'yxatda turish"
+        "13. Bandlikni ta'minlash",
+        "14. \"Yoshlar daftari\" elektron platformasida ro'yxatda turish"
     ],
     mahallas: [
         { name: "Баркамол авлод", leaderName: "Отамирзаев Рахматиллохон", leaderPhone: "+998 95 023-50-07" },
