@@ -20,7 +20,7 @@ const db = {
     appealTypes: [
         "1. Avtomototransport vositalari haydovchilarini tayyorlash",
         "2. To'lov-kontrakt",
-        "3. Ilm-fan, sport, san'at va madaniyat o'quv kurslari",
+        "3. Ilm-fan, sport, sanat va madaniyat o'quv kurslari",
         "4. Olimpiada va tanlovlar (mahalliy bosqich) xarajatlari",
         "5. Davolanish bilan bog'liq xarajatlar",
         "6. Safarbarlik chaqiruvi rezervidagi xizmat badali",
