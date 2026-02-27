@@ -245,7 +245,7 @@ bot.on('message', (msg) => {
 
             // Guruhga yuboriladigan xabar shabloni
             const adminMessage = `
-🆕 *YANGI MUROJAAT*
+🆕 *YANGI MUROJAT*
 🔢 Tartib raqami: #${appealCounter}
 📅 Sana: ${date}
 
