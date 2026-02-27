@@ -4,7 +4,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const token = '8598676893:AAElUKnA2EiH6fUy6BhXUhgiIIrwRnyCCKw';
 
 // Murojaatlarni qabul qiladigan guruh ID raqami
-const ADMIN_GROUP_ID = '-3773266037';
+const ADMIN_GROUP_ID = '-1003773266037';
 
 // Botni ishga tushirish
 const bot = new TelegramBot(token, { polling: true });
