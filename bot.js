@@ -11,6 +11,8 @@ const bot = new TelegramBot(token, { polling: true });
 
 // Foydalanuvchilarning sessiyalarini saqlash
 const sessions = {};
+// Foydalanuvchilarning oxirgi murojaat vaqtini saqlash
+const lastAppealDates = {};
 let appealCounter = 1;
 
 // ==========================================
@@ -243,9 +245,29 @@ bot.on('message', (msg) => {
 
             // O'zbekiston vaqti bilan sanani olish
             const date = new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
+            
+            // =====================================
+            // 3 KUNLIK MUDDATNI TEKSHIRISH QISMI
+            // =====================================
+            const now = Date.now();
+            let isUnsupervised = false;
+            
+            // Agar foydalanuvchi oldin murojaat qilgan bo'lsa
+            if (lastAppealDates[chatId]) {
+                const diffTime = now - lastAppealDates[chatId];
+                const threeDaysInMs = 3 * 24 * 60 * 60 * 1000; // 3 kun millisekundlarda
+                
+                if (diffTime < threeDaysInMs) {
+                    isUnsupervised = true;
+                }
+            }
+            
+            // Yangi murojaat vaqtini xotiraga saqlab qo'yish
+            lastAppealDates[chatId] = now;
+            // =====================================
 
-            // Guruhga yuboriladigan xabar shabloni
-            const adminMessage = `
+            // Guruhga yuboriladigan xabar shabloni (let bilan yozildi, chunki o'zgarishi mumkin)
+            let adminMessage = `
 🆕 *YANGI MUROJAT*
 🔢 Tartib raqami: #${appealCounter}
 📅 Sana: ${date}
@@ -258,8 +280,12 @@ bot.on('message', (msg) => {
 📌 *Murojaat turi:* ${session.appealType}
 
 📝 *Murojaat matni:*
-${session.appealText}
-            `;
+${session.appealText}`;
+
+            // Agar 3 kun ichida qayta yozgan bo'lsa, xabar oxiriga ogohlantirish qo'shamiz
+            if (isUnsupervised) {
+                adminMessage += `\n\n🚨 *NAZORATGA OLINMAGAN MUROJAAT*`;
+            }
 
             // Xabarni guruhga yuborish
             bot.sendMessage(ADMIN_GROUP_ID, adminMessage, { parse_mode: "Markdown" })
