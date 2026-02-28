@@ -1,19 +1,39 @@
 const TelegramBot = require('node-telegram-bot-api');
+const fs = require('fs');
+const path = require('path');
 
-// Bot tokeni
+// Bot tokeni va guruh ID
 const token = '8598676893:AAElUKnA2EiH6fUy6BhXUhgiIIrwRnyCCKw';
-
-// Murojaatlarni qabul qiladigan guruh ID raqami
 const ADMIN_GROUP_ID = '-1003773266037';
 
-// Botni ishga tushirish
 const bot = new TelegramBot(token, { polling: true });
 
-// Foydalanuvchilarning sessiyalarini saqlash
+// Sessiyalar faqat jarayon uchun (RAM da qolsa yetarli)
 const sessions = {};
-// Foydalanuvchilarning oxirgi murojaat vaqtini saqlash
-const lastAppealDates = {};
-let appealCounter = 1;
+
+// ==========================================
+// BAZANI FAYLDAN O'QISH VA SAQLASH
+// ==========================================
+const dataFilePath = path.join(__dirname, 'bot_data.json');
+
+// Dastlabki qiymatlar (raqam 0 dan boshlanadi)
+let appData = {
+    appealCounter: 0,
+    lastAppealDates: {}
+};
+
+// Agar fayl oldin yaratilgan bo'lsa, undagi malumotlarni o'qiymiz
+if (fs.existsSync(dataFilePath)) {
+    const rawData = fs.readFileSync(dataFilePath);
+    appData = JSON.parse(rawData);
+}
+
+// O'zgarishlarni faylga yozib qo'yuvchi funksiya
+function saveData() {
+    fs.writeFileSync(dataFilePath, JSON.stringify(appData, null, 2));
+}
+// ==========================================
+
 
 // ==========================================
 // MA'LUMOTLAR BAZASI (NAMANGAN SHAHAR)
@@ -99,7 +119,6 @@ const db = {
 };
 // ==========================================
 
-// Massivni ma'lum o'lchamda bo'laklarga bo'luvchi yordamchi funksiya
 function chunkArray(arr, size) {
     const result = [];
     for (let i = 0; i < arr.length; i += size) {
@@ -108,7 +127,6 @@ function chunkArray(arr, size) {
     return result;
 }
 
-// /start buyrug'ini qabul qilish
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
     sessions[chatId] = { step: 'AWAITING_NAME' };
@@ -118,13 +136,11 @@ bot.onText(/\/start/, (msg) => {
     });
 });
 
-// Barcha xabarlarni eshitish
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
     const session = sessions[chatId];
 
-    // Agar /start bo'lsa yoki sessiya yo'q bo'lsa, pastga o'tmaslik
     if (text === '/start' || !session) return;
 
     switch (session.step) {
@@ -132,7 +148,6 @@ bot.on('message', (msg) => {
             session.name = text;
             session.step = 'AWAITING_MAHALLA';
             
-            // JSON dan mahalla nomlarini ajratib olish
             const mahallaNames = db.mahallas.map(m => m.name);
             const mahallaButtons = chunkArray(mahallaNames, 2).map(row => row.map(name => ({ text: name })));
             
@@ -188,7 +203,6 @@ bot.on('message', (msg) => {
             session.age = text;
             session.step = 'AWAITING_APPEAL_TYPE';
             
-            // JSON dan murojaat turlarini ajratib olish (1 ta qatorda 1 ta tugma qilib chiqaramiz)
             const appealButtons = chunkArray(db.appealTypes, 1).map(row => row.map(type => ({ text: type })));
             
             bot.sendMessage(chatId, "Murojaat turini tanlang:", {
@@ -220,7 +234,6 @@ bot.on('message', (msg) => {
                     reply_markup: { remove_keyboard: true }
                 });
             } else if (text === "Yo'q") {
-                // JSON dan tanlangan mahallaga mos yetakchini topish
                 const matchedMahalla = db.mahallas.find(m => m.name === session.mahalla);
                 const leaderName = matchedMahalla ? matchedMahalla.leaderName : "Biriktirilmagan";
                 const leaderPhone = matchedMahalla ? matchedMahalla.leaderPhone : "Mavjud emas";
@@ -243,33 +256,29 @@ bot.on('message', (msg) => {
                 reply_markup: { remove_keyboard: true }
             });
 
-            // O'zbekiston vaqti bilan sanani olish
             const date = new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
             
-            // =====================================
-            // 3 KUNLIK MUDDATNI TEKSHIRISH QISMI
-            // =====================================
             const now = Date.now();
             let isUnsupervised = false;
             
-            // Agar foydalanuvchi oldin murojaat qilgan bo'lsa
-            if (lastAppealDates[chatId]) {
-                const diffTime = now - lastAppealDates[chatId];
-                const threeDaysInMs = 3 * 24 * 60 * 60 * 1000; // 3 kun millisekundlarda
+            if (appData.lastAppealDates[chatId]) {
+                const diffTime = now - appData.lastAppealDates[chatId];
+                const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
                 
                 if (diffTime < threeDaysInMs) {
                     isUnsupervised = true;
                 }
             }
             
-            // Yangi murojaat vaqtini xotiraga saqlab qo'yish
-            lastAppealDates[chatId] = now;
-            // =====================================
+            // Vaqtni yozib qoldiramiz
+            appData.lastAppealDates[chatId] = now;
 
-            // Guruhga yuboriladigan xabar shabloni (let bilan yozildi, chunki o'zgarishi mumkin)
+            // Xabarga qo'shiladigan joriy tartib raqami
+            const currentAppealNumber = appData.appealCounter;
+
             let adminMessage = `
 🆕 *YANGI MUROJAT*
-🔢 Tartib raqami: #${appealCounter}
+🔢 Tartib raqami: #${currentAppealNumber}
 📅 Sana: ${date}
 
 👤 *F.I.SH:* ${session.name}
@@ -282,28 +291,26 @@ bot.on('message', (msg) => {
 📝 *Murojaat matni:*
 ${session.appealText}`;
 
-            // Agar 3 kun ichida qayta yozgan bo'lsa, xabar oxiriga ogohlantirish qo'shamiz
             if (isUnsupervised) {
                 adminMessage += `\n\n🚨 *NAZORATGA OLINMAGAN MUROJAAT*`;
             }
 
-            // Xabarni guruhga yuborish
             bot.sendMessage(ADMIN_GROUP_ID, adminMessage, { parse_mode: "Markdown" })
                 .then(() => {
-                    console.log(`Murojaat #${appealCounter} guruhga yuborildi.`);
-                    appealCounter++; // Keyingi murojaat uchun raqamni oshirish
+                    console.log(`Murojaat #${currentAppealNumber} guruhga yuborildi.`);
+                    // Keyingi safar uchun raqamni oshiramiz va faylga saqlaymiz
+                    appData.appealCounter++; 
+                    saveData();
                 })
                 .catch((err) => {
                     console.log("Guruhga yuborishda xatolik:", err.message);
                 });
 
-            // Sessiyani tozalash
             delete sessions[chatId];
             break;
     }
 });
 
-// Xatoliklarni ushlash
 bot.on('polling_error', (error) => {
     console.log("Botda xatolik yuz berdi:", error.code);
     console.log("Xatolikning aniq sababi:", error.message);
