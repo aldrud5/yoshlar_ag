@@ -121,7 +121,7 @@ const db = {
 
 function chunkArray(arr, size) {
     const result = [];
-    for (let i = 0; i < arr.length; i += size) {
+    for (let i = 1; i < arr.length; i += size) {
         result.push(arr.slice(i, i + size));
     }
     return result;
