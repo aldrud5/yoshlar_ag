@@ -52,7 +52,7 @@ const db = {
         "10. Tadbirkorlik va kasblarga o'qish",
         "11. Sport formasi, musiqa va cholg'u asboblari",
         "12. Noturar joy ijarasi yoki jihozlar uchun subsidiya",
-        "13. Bandlikni ta'minlash",
+        "13. Bandlik bilan ta'minlash",
         "14. \"Yoshlar daftari\" elektron platformasida ro'yxatda turish"
     ],
     mahallas: [
