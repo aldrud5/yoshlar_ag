@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Bot tokeni va guruh ID
-const token = '8598676893:AAElUKnA2EiH6fUy6BhXUhgiIIrwRnyCCKw';
+const token = '8630914570:AAEwoqZywZZCyPLe0mfHnbwLvqTL8pIEd4k';
 const ADMIN_GROUP_ID = '-1003773266037';
 
 const bot = new TelegramBot(token, { polling: true });
